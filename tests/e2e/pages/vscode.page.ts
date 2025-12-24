@@ -472,6 +472,9 @@ export abstract class VSCode {
         const reviewHeaderLocator = resolutionView.locator(
           '.batch-review-expandable-header .batch-review-title'
         );
+        await this.getWindow().screenshot({
+          path: `${SCREENSHOTS_FOLDER}/resolution-view-before-accept.png`,
+        });
         await reviewHeaderLocator.waitFor({ state: 'visible', timeout: 10000 });
         let headerText = await reviewHeaderLocator.textContent();
         const match = headerText && headerText.match(/\((\d+)\s+of\s+(\d+)\)/);
