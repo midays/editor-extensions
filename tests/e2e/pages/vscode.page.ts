@@ -469,26 +469,39 @@ export abstract class VSCode {
       if (resolutionAction === ResolutionAction.Accept) {
         let fixedFiles: string[] = [];
         // Parse the "(current of total)" from the header to get file count
-        const reviewHeaderLocator = resolutionView.locator(
-          '.batch-review-expandable-header .batch-review-title'
+        const modifiedFileCardLocator = resolutionView.locator(
+          '.pf-v6-c-card .modified-file-card'
         );
         await this.getWindow().screenshot({
           path: `${SCREENSHOTS_FOLDER}/resolution-view-before-accept.png`,
         });
-        await reviewHeaderLocator.waitFor({ state: 'visible', timeout: 10000 });
+
+        await modifiedFileCardLocator.waitFor({ state: 'visible', timeout: 10000 });
+        const reviewHeaderLocator = modifiedFileCardLocator.locator('.pf-v6-c-card__title-text');
         let headerText = await reviewHeaderLocator.textContent();
         const match = headerText && headerText.match(/\((\d+)\s+of\s+(\d+)\)/);
         const totalFiles = match ? parseInt(match[2], 10) : 1;
-        console.log('Total files found to accept solutions for: ', totalFiles);
-        for (let i = 0; i < totalFiles; i++) {
-          headerText = await reviewHeaderLocator.textContent();
-          const fileNameMatch = headerText && headerText.match(/^Reviewing:\s*([^\(]+)\s*\(/);
-          const fileToFix = fileNameMatch && fileNameMatch[1] ? fileNameMatch[1].trim() : '';
-          console.log('Reviewing file: ', fileToFix);
-          fixedFiles.push(fileToFix);
+        
+        if (totalFiles === 1 ) {
+          let fileTitleLocator = modifiedFileCardLocator.locator('.pf-v6-l-flex .pf-m-grow strong');
+          const fileTitle = await fileTitleLocator.textContent();
+          console.log('Accepting solution for file: ', fileTitle);
+          fixedFiles.push(fileTitle);
           await actionLocator.waitFor({ state: 'visible', timeout: 10000 });
           await actionLocator.dispatchEvent('click');
-          console.log('Accepted solution for file: ', fileToFix);
+          console.log('Accepted solution for file: ', fileTitle);
+        }else{
+          console.log('Total files found to accept solutions for: ', totalFiles);
+          for (let i = 0; i < totalFiles; i++) {
+            headerText = await reviewHeaderLocator.textContent();
+            const fileNameMatch = headerText && headerText.match(/^Reviewing:\s*([^\(]+)\s*\(/);
+            const fileToFix = fileNameMatch && fileNameMatch[1] ? fileNameMatch[1].trim() : '';
+            console.log('Reviewing file: ', fileToFix);
+            fixedFiles.push(fileToFix);
+            await actionLocator.waitFor({ state: 'visible', timeout: 10000 });
+            await actionLocator.dispatchEvent('click');
+            console.log('Accepted solution for file: ', fileToFix);
+          }
         }
         return fixedFiles;
       } else {
